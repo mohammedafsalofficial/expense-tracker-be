@@ -1,4 +1,4 @@
-package com.tracker.expense.model;
+package com.tracker.expense.model.auth;
 
 import com.tracker.expense.enums.Role;
 import jakarta.persistence.*;

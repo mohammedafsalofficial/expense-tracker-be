@@ -34,7 +34,7 @@ logging:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: 86400000    # 1 day in milliseconds
+  expiration: 900000   # 15 minutes (in ms)
 
 server:
   port: ${ET_SERVER_PORT:8080}    # Application will run on this port (can change as needed)

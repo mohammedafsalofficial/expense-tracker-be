@@ -1,7 +1,7 @@
 package com.tracker.expense.security;
 
-import com.tracker.expense.model.User;
-import com.tracker.expense.repository.UserRepository;
+import com.tracker.expense.model.auth.User;
+import com.tracker.expense.repository.auth.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

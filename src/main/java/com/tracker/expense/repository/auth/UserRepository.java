@@ -1,6 +1,6 @@
-package com.tracker.expense.repository;
+package com.tracker.expense.repository.auth;
 
-import com.tracker.expense.model.User;
+import com.tracker.expense.model.auth.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

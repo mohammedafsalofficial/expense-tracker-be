@@ -4,7 +4,7 @@ import com.tracker.expense.dto.ApiResponse;
 import com.tracker.expense.dto.auth.LoginRequest;
 import com.tracker.expense.dto.auth.RegisterRequest;
 import com.tracker.expense.dto.auth.AuthResponse;
-import com.tracker.expense.model.User;
+import com.tracker.expense.model.auth.User;
 import com.tracker.expense.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -12,10 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/auth")
@@ -43,25 +40,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
-        User loggedInUser = authService.login(request);
-        String jwtToken = authService.generateJwt(request.email());
-
-        ResponseCookie cookie = ResponseCookie.from("ACCESS_TOKEN", jwtToken)
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(24 * 60 * 60)  // 1 day
-                .sameSite("Strict")
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-
-        AuthResponse authResponse = AuthResponse.builder()
-                .id(loggedInUser.getId())
-                .name(loggedInUser.getName())
-                .email(loggedInUser.getEmail())
-                .role(loggedInUser.getRole())
-                .build();
+        AuthResponse authResponse = authService.login(request, response);
 
         return ResponseEntity.ok().body(
                 ApiResponse.of("User logged in successfully", authResponse));
@@ -80,5 +59,13 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
 
         return ResponseEntity.ok(ApiResponse.of("Logged out successfully", null));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<?>> refreshToken(
+            @CookieValue(name = "REFRESH_TOKEN", required = false) String refreshToken,
+            HttpServletResponse response) {
+        authService.refreshAccessToken(refreshToken, response);
+        return ResponseEntity.ok(ApiResponse.of("Access token refreshed successfully", null));
     }
 }
