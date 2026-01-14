@@ -66,4 +66,19 @@ public class AuthController {
         return ResponseEntity.ok().body(
                 ApiResponse.of("User logged in successfully", authResponse));
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<?>> logout(HttpServletResponse response) {
+        ResponseCookie deleteCookie = ResponseCookie.from("ACCESS_TOKEN", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
+
+        return ResponseEntity.ok(ApiResponse.of("Logged out successfully", null));
+    }
 }
