@@ -31,9 +31,15 @@ public class GlobalExceptionHandler {
                 ApiErrorResponse.of(ex.getMessage(), null));
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                ApiErrorResponse.of(ex.getMessage(), null));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex) {
         return ResponseEntity.internalServerError().body(
-                ApiErrorResponse.of("Something went wrong", null));
+                ApiErrorResponse.of(ex.getMessage(), null));
     }
 }

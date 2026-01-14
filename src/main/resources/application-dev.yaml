@@ -32,5 +32,9 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000    # 1 day in milliseconds
+
 server:
   port: ${ET_SERVER_PORT:8080}    # Application will run on this port (can change as needed)
