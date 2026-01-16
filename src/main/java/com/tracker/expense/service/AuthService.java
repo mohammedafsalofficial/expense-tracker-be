@@ -20,6 +20,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.Ref;
 
 @Service
 @RequiredArgsConstructor
@@ -73,20 +76,29 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
+    public void logout(User user, HttpServletResponse response) {
+        refreshTokenRepository.deleteByUserId(user.getId());
+        deleteCookie(response, "ACCESS_TOKEN");
+        deleteCookie(response, "REFRESH_TOKEN");
+    }
+
+    @Transactional
     public void refreshAccessToken(String refreshToken, HttpServletResponse response) {
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new RuntimeException("Refresh token is missing");
         }
 
-        RefreshToken storedToken = refreshTokenRepository.findByToken(refreshToken)
+        RefreshToken oldRefreshToken = refreshTokenRepository.findByToken(refreshToken)
                 .map(refreshTokenService::verifyExpiration)
                 .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
 
-        User user = storedToken.getUser();
+        RefreshToken newRefreshToken = refreshTokenService.rotateRefreshToken(oldRefreshToken);
 
-        String newAccessToken = jwtUtil.generateToken(user.getEmail());
+        String newAccessToken = jwtUtil.generateToken(oldRefreshToken.getUser().getEmail());
 
         setCookie(response, "ACCESS_TOKEN", newAccessToken, 15 * 60);
+        setCookie(response, "REFRESH_TOKEN", newRefreshToken.getToken(), 7 *  24 *  60 * 60);
     }
 
     private void setCookie(HttpServletResponse response, String name, String value, int maxAge) {
@@ -99,5 +111,17 @@ public class AuthService {
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    public void deleteCookie(HttpServletResponse response, String name) {
+        ResponseCookie deleteCookie = ResponseCookie.from(name, "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
     }
 }

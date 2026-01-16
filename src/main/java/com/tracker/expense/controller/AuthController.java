@@ -5,6 +5,7 @@ import com.tracker.expense.dto.auth.LoginRequest;
 import com.tracker.expense.dto.auth.RegisterRequest;
 import com.tracker.expense.dto.auth.AuthResponse;
 import com.tracker.expense.model.auth.User;
+import com.tracker.expense.security.UserPrincipal;
 import com.tracker.expense.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -47,17 +49,9 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<?>> logout(HttpServletResponse response) {
-        ResponseCookie deleteCookie = ResponseCookie.from("ACCESS_TOKEN", "")
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(0)
-                .sameSite("Strict")
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
-
+    public ResponseEntity<ApiResponse<?>> logout(Authentication authentication, HttpServletResponse response) {
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+        authService.logout(principal.getUser(), response);
         return ResponseEntity.ok(ApiResponse.of("Logged out successfully", null));
     }
 
