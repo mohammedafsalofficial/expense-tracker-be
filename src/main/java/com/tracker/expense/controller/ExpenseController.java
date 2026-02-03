@@ -20,8 +20,14 @@ public class ExpenseController {
     private final ExpenseService expenseService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ExpenseResponse>>> getAllExpenses() {
-        List<ExpenseResponse> response = expenseService.getAllExpenses();
+    public ResponseEntity<ApiResponse<List<ExpenseResponse>>> getExpenses(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false, name = "start_date") String startDate,
+            @RequestParam(required = false, name = "end_date") String endDate,
+            @RequestParam(required = false, name = "min_amount") Double minAmount,
+            @RequestParam(required = false, name = "max_amount") Double maxAmount
+    ) {
+        List<ExpenseResponse> response = expenseService.getExpenses(category, startDate, endDate, minAmount, maxAmount);
         return ResponseEntity.ok(ApiResponse.of("Expenses fetched successfully.", response));
     }
 
