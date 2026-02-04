@@ -2,6 +2,9 @@ package com.tracker.expense.service;
 
 import com.tracker.expense.dto.expense.ExpenseRequest;
 import com.tracker.expense.dto.expense.ExpenseResponse;
+import com.tracker.expense.dto.expense.ExpenseUpdateRequest;
+import com.tracker.expense.exception.AccessDeniedException;
+import com.tracker.expense.exception.ResourceNotFoundException;
 import com.tracker.expense.model.auth.User;
 import com.tracker.expense.model.expense.Expense;
 import com.tracker.expense.repository.expense.ExpenseRepository;
@@ -63,14 +66,14 @@ public class ExpenseService {
         return expenses.stream().map(this::mapToResponse).toList();
     }
 
-    public ExpenseResponse addNewExpense(ExpenseRequest expenseRequest) {
+    public ExpenseResponse addNewExpense(ExpenseRequest requestDTO) {
         String email = securityUtil.getCurrentUserEmail();
         User user = userService.getUserByEmail(email);
 
         Expense expense = Expense.builder()
-                .amount(expenseRequest.getAmount())
-                .category(expenseRequest.getCategory())
-                .description(expenseRequest.getDescription())
+                .amount(requestDTO.getAmount())
+                .category(requestDTO.getCategory())
+                .description(requestDTO.getDescription())
                 .user(user)
                 .build();
 
@@ -83,6 +86,32 @@ public class ExpenseService {
                 .description(savedExpense.getDescription())
                 .date(savedExpense.getDate())
                 .build();
+    }
+
+    public ExpenseResponse updateExpense(Long id, ExpenseUpdateRequest requestDTO) {
+        String email = securityUtil.getCurrentUserEmail();
+        User user = userService.getUserByEmail(email);
+
+        Expense expense = expenseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Expense not found for id: " + id));
+
+        if (!expense.getUser().getId().equals(user.getId()))
+            throw new AccessDeniedException("You are not allowed to update this expense");
+
+        if (requestDTO.getAmount() != null) {
+            if (requestDTO.getAmount() < 1)
+                throw new IllegalArgumentException("Amount must be greater than zero");
+            expense.setAmount(requestDTO.getAmount());
+        }
+
+        if (requestDTO.getCategory() != null && !requestDTO.getCategory().isBlank())
+            expense.setCategory(requestDTO.getCategory());
+
+        if (requestDTO.getDescription() != null)
+            expense.setDescription(requestDTO.getDescription());
+
+        Expense updatedExpense = expenseRepository.save(expense);
+        return mapToResponse(updatedExpense);
     }
 
     public void deleteExpense(Long id) {

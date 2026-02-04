@@ -3,6 +3,7 @@ package com.tracker.expense.controller;
 import com.tracker.expense.dto.ApiResponse;
 import com.tracker.expense.dto.expense.ExpenseRequest;
 import com.tracker.expense.dto.expense.ExpenseResponse;
+import com.tracker.expense.dto.expense.ExpenseUpdateRequest;
 import com.tracker.expense.service.ExpenseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,9 +33,16 @@ public class ExpenseController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ExpenseResponse>> addNewExpense(@Valid @RequestBody ExpenseRequest expenseRequest) {
-        ExpenseResponse response = expenseService.addNewExpense(expenseRequest);
+    public ResponseEntity<ApiResponse<ExpenseResponse>> addNewExpense(@Valid @RequestBody ExpenseRequest requestDTO) {
+        ExpenseResponse response = expenseService.addNewExpense(requestDTO);
         return ResponseEntity.ok(ApiResponse.of("Expense created successfully.", response));
+    }
+
+    @PatchMapping("{id}")
+    public ResponseEntity<ApiResponse<ExpenseResponse>> updateExpense(
+            @PathVariable Long id, @RequestBody ExpenseUpdateRequest requestDTO) {
+        ExpenseResponse expenseResponse = expenseService.updateExpense(id, requestDTO);
+        return ResponseEntity.ok(ApiResponse.of("Expense updated successfully", expenseResponse));
     }
 
     @DeleteMapping("/{id}")
