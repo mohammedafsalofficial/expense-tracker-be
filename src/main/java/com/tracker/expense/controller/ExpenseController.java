@@ -1,6 +1,7 @@
 package com.tracker.expense.controller;
 
 import com.tracker.expense.dto.ApiResponse;
+import com.tracker.expense.dto.expense.ExpenseInsightResponse;
 import com.tracker.expense.dto.expense.ExpenseRequest;
 import com.tracker.expense.dto.expense.ExpenseResponse;
 import com.tracker.expense.dto.expense.ExpenseUpdateRequest;
@@ -37,6 +38,12 @@ public class ExpenseController {
                 category, startDate, endDate, minAmount, maxAmount, page, size, sortBy, direction
         );
         return ResponseEntity.ok(ApiResponse.of("Expenses fetched successfully.", response));
+    }
+
+    @GetMapping("/insights")
+    public ResponseEntity<ApiResponse<ExpenseInsightResponse>> getInsights(@RequestParam(required = false) String month) {
+        ExpenseInsightResponse insights = expenseService.getInsights(month);
+        return ResponseEntity.ok(ApiResponse.of("Insights fetched successfully", insights));
     }
 
     @PostMapping

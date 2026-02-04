@@ -1,8 +1,6 @@
 package com.tracker.expense.service;
 
-import com.tracker.expense.dto.expense.ExpenseRequest;
-import com.tracker.expense.dto.expense.ExpenseResponse;
-import com.tracker.expense.dto.expense.ExpenseUpdateRequest;
+import com.tracker.expense.dto.expense.*;
 import com.tracker.expense.exception.AccessDeniedException;
 import com.tracker.expense.exception.ResourceNotFoundException;
 import com.tracker.expense.model.auth.User;
@@ -20,7 +18,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -86,7 +86,7 @@ public class ExpenseService {
 
         Expense expense = Expense.builder()
                 .amount(requestDTO.getAmount())
-                .category(requestDTO.getCategory())
+                .category(requestDTO.getCategory().toLowerCase())
                 .description(requestDTO.getDescription())
                 .user(user)
                 .build();
@@ -119,7 +119,7 @@ public class ExpenseService {
         }
 
         if (requestDTO.getCategory() != null && !requestDTO.getCategory().isBlank())
-            expense.setCategory(requestDTO.getCategory());
+            expense.setCategory(requestDTO.getCategory().toLowerCase());
 
         if (requestDTO.getDescription() != null)
             expense.setDescription(requestDTO.getDescription());
@@ -157,5 +157,49 @@ public class ExpenseService {
         if (min != null)
             return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("amount"), min);
         return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("amount"), max);
+    }
+
+    public ExpenseInsightResponse getInsights(String month) {
+        String email = securityUtil.getCurrentUserEmail();
+        User user = userService.getUserByEmail(email);
+
+        YearMonth currentMonth = month != null ? YearMonth.parse(month) : YearMonth.now();
+        YearMonth previousMonth = currentMonth.minusMonths(1);
+
+        LocalDateTime currentStart = currentMonth.atDay(1).atStartOfDay();
+        LocalDateTime currentEnd = currentMonth.atEndOfMonth().atTime(LocalTime.MAX);
+        LocalDateTime prevStart = previousMonth.atDay(1).atStartOfDay();
+        LocalDateTime prevEnd = previousMonth.atEndOfMonth().atTime(LocalTime.MAX);
+
+        Double totalCurrent = Optional.ofNullable(
+                expenseRepository.getTotalSpent(user, currentStart, currentEnd)).orElse(0.0);
+        Double totalPrevious = Optional.ofNullable(
+                expenseRepository.getTotalSpent(user, prevStart, prevEnd)).orElse(0.0);
+
+        List<Object[]> categoryData = expenseRepository.getCategoryWiseTotal(user, currentStart, currentEnd);
+        List<ExpenseCategorySummary> categories = categoryData.stream()
+                .map(obj -> new ExpenseCategorySummary((String) obj[0], (Double) obj[1]))
+                .toList();
+
+        double changePercentage = totalPrevious == 0 ? 100.0 : ((totalCurrent - totalPrevious) /totalPrevious) * 100;
+        String trend = totalCurrent > totalPrevious ? "increase" : totalCurrent < totalPrevious ? "decrease" : "no change";
+
+        String advice;
+        if (totalCurrent > totalPrevious)
+            advice = "Your spending increased this month. Try reviewing your top categories.";
+        else if (totalCurrent < totalPrevious)
+            advice = "Nice! You've spent less than previous month. Keep it up!";
+        else
+            advice = "Your spending is consistent with previous month.";
+
+        return ExpenseInsightResponse.builder()
+                .month(currentMonth.toString())
+                .totalSpent(totalCurrent)
+                .previousMonthSpent(totalPrevious)
+                .changePercent(changePercentage)
+                .trend(trend)
+                .topCategories(categories)
+                .advice(advice)
+                .build();
     }
 }
