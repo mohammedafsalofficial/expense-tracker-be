@@ -7,6 +7,7 @@ import com.tracker.expense.dto.expense.ExpenseUpdateRequest;
 import com.tracker.expense.service.ExpenseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,14 +22,20 @@ public class ExpenseController {
     private final ExpenseService expenseService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ExpenseResponse>>> getExpenses(
+    public ResponseEntity<ApiResponse<Page<ExpenseResponse>>> getExpenses(
             @RequestParam(required = false) String category,
             @RequestParam(required = false, name = "start_date") String startDate,
             @RequestParam(required = false, name = "end_date") String endDate,
             @RequestParam(required = false, name = "min_amount") Double minAmount,
-            @RequestParam(required = false, name = "max_amount") Double maxAmount
+            @RequestParam(required = false, name = "max_amount") Double maxAmount,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "date", name = "sort_by") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction
     ) {
-        List<ExpenseResponse> response = expenseService.getExpenses(category, startDate, endDate, minAmount, maxAmount);
+        Page<ExpenseResponse> response = expenseService.getExpenses(
+                category, startDate, endDate, minAmount, maxAmount, page, size, sortBy, direction
+        );
         return ResponseEntity.ok(ApiResponse.of("Expenses fetched successfully.", response));
     }
 

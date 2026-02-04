@@ -10,6 +10,10 @@ import com.tracker.expense.model.expense.Expense;
 import com.tracker.expense.repository.expense.ExpenseRepository;
 import com.tracker.expense.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -36,12 +40,16 @@ public class ExpenseService {
                 .build();
     }
 
-    public List<ExpenseResponse> getExpenses(
+    public Page<ExpenseResponse> getExpenses(
             String category,
             String startDate,
             String endDate,
             Double minAmount,
-            Double maxAmount) {
+            Double maxAmount,
+            int page,
+            int size,
+            String sortBy,
+            String direction) {
         String email = securityUtil.getCurrentUserEmail();
         User user = userService.getUserByEmail(email);
 
@@ -62,8 +70,14 @@ public class ExpenseService {
         Specification<Expense> amountSpec = amountBetween(minAmount, maxAmount);
         if (amountSpec != null) spec = spec.and(amountSpec);
 
-        List<Expense> expenses = expenseRepository.findAll(spec);
-        return expenses.stream().map(this::mapToResponse).toList();
+        Sort sort = direction.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Expense> expensePage = expenseRepository.findAll(spec, pageable);
+        return expensePage.map(this::mapToResponse);
     }
 
     public ExpenseResponse addNewExpense(ExpenseRequest requestDTO) {
