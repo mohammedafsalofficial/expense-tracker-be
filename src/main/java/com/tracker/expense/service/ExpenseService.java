@@ -50,8 +50,7 @@ public class ExpenseService {
             int size,
             String sortBy,
             String direction) {
-        String email = securityUtil.getCurrentUserEmail();
-        User user = userService.getUserByEmail(email);
+        User user = securityUtil.getCurrentUser();
 
         String normalizedCategory = (category != null && !category.isBlank())
                 ? category.trim().toLowerCase()
@@ -81,8 +80,7 @@ public class ExpenseService {
     }
 
     public ExpenseResponse addNewExpense(ExpenseRequest requestDTO) {
-        String email = securityUtil.getCurrentUserEmail();
-        User user = userService.getUserByEmail(email);
+        User user = securityUtil.getCurrentUser();
 
         Expense expense = Expense.builder()
                 .amount(requestDTO.getAmount())
@@ -103,8 +101,7 @@ public class ExpenseService {
     }
 
     public ExpenseResponse updateExpense(Long id, ExpenseUpdateRequest requestDTO) {
-        String email = securityUtil.getCurrentUserEmail();
-        User user = userService.getUserByEmail(email);
+        User user = securityUtil.getCurrentUser();
 
         Expense expense = expenseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found for id: " + id));
@@ -160,8 +157,7 @@ public class ExpenseService {
     }
 
     public ExpenseInsightResponse getInsights(String month) {
-        String email = securityUtil.getCurrentUserEmail();
-        User user = userService.getUserByEmail(email);
+        User user = securityUtil.getCurrentUser();
 
         YearMonth currentMonth = month != null ? YearMonth.parse(month) : YearMonth.now();
         YearMonth previousMonth = currentMonth.minusMonths(1);
