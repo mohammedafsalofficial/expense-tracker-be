@@ -10,6 +10,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class CategoryService {
@@ -33,6 +35,19 @@ public class CategoryService {
         return CategoryResponse.builder()
                 .id(savedCategory.getId())
                 .category(savedCategory.getCategory())
+                .build();
+    }
+
+    public List<CategoryResponse> getAllCategories() {
+        User user = securityUtil.getCurrentUser();
+        List<Category> categories = categoryRepository.findAllByUser(user);
+        return categories.stream().map(this::mapToResponse).toList();
+    }
+
+    private CategoryResponse mapToResponse(Category category) {
+        return CategoryResponse.builder()
+                .id(category.getId())
+                .category(category.getCategory())
                 .build();
     }
 }
