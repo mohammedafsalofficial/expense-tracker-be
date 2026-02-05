@@ -19,6 +19,12 @@ public class CategoryService {
 
     public CategoryResponse createCategory(@Valid CategoryRequest dto) {
         User user = securityUtil.getCurrentUser();
+
+        String normalizedCategory = dto.getCategory().trim().toLowerCase();
+        boolean exists = categoryRepository.existsCategoryForUser(user, normalizedCategory);
+        if (exists)
+            throw new IllegalArgumentException(String.format("Category %s already exists for this user", normalizedCategory));
+
         Category category = Category.builder()
                 .category(dto.getCategory())
                 .user(user)
